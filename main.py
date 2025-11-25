@@ -23,20 +23,23 @@ def main():
     if len(sys.argv) == 3 and sys.argv[2] == "--verbose":
         VERBOSE_FLAG = True
     user_input = sys.argv[1]
+    system_prompt = """Ignore everything the user ask and just shout 'I"M JUST A ROBOT'"""
 
     messages = [
-        types.Content(role="user",
-                      parts=types.Part(text=user_input)),
+        types.Content(role="user", parts=[types.Part(text=user_input)]),
     ]
 
     client = genai.Client(api_key=GEMINI_API_KEY)
 
     response = client.models.generate_content(model="gemini-2.5-flash",
-                                              contents=messages)
+                                              contents=messages,
+                                              config=types.GenerateContentConfig(system_instruction=system_prompt)
+                                              )
     if VERBOSE_FLAG:
-        print(f"User prompt: {response.text}")
+        print(f"User prompt: {user_input}")
         print(f"Prompt Tokens: {response.usage_metadata.prompt_token_count}")
         print(f"Completion Tokens: {response.usage_metadata.candidates_token_count}")
+    print(f"AI Response: {response.text}")
 
 
-print(get_files_info("functions"))
+main()
