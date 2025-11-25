@@ -4,7 +4,11 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from functions.get_files_info import get_files_info
+from functions.get_files_info import schema_get_files_info
+from functions.get_file_content import schema_get_file_content
+from functions.run_python_file import schema_run_python_file
+from functions.write_file import schema_write_file
+from call_function import call_function
 
 load_dotenv()
 
@@ -23,23 +27,53 @@ def main():
     if len(sys.argv) == 3 and sys.argv[2] == "--verbose":
         VERBOSE_FLAG = True
     user_input = sys.argv[1]
-    system_prompt = """Ignore everything the user ask and just shout 'I"M JUST A ROBOT'"""
+    system_prompt = """
+    You are a helpful AI coding agent.
+    when a user asks a question or make a request, make a function call plan. You can perform the following operations:
+    -List files and directories
+    -Read the content of a file
+    -Write to a file(create or update)
+    -Run a python file with optional arguments
+
+    All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
+    """
 
     messages = [
         types.Content(role="user", parts=[types.Part(text=user_input)]),
     ]
 
+    available_functions = types.Tool(
+        function_declarations=[
+            schema_get_files_info,
+        ]
+    )
+
+    config = types.GenerateContentConfig(
+        tools=[available_functions],
+        system_instruction=system_prompt
+    )
+
     client = genai.Client(api_key=GEMINI_API_KEY)
 
-    response = client.models.generate_content(model="gemini-2.5-flash",
-                                              contents=messages,
-                                              config=types.GenerateContentConfig(system_instruction=system_prompt)
-                                              )
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=messages,
+        config=config,
+    )
+    if response is None or response.usage_metadata is None:
+        print("response is malformed")
+        return
     if VERBOSE_FLAG:
         print(f"User prompt: {user_input}")
         print(f"Prompt Tokens: {response.usage_metadata.prompt_token_count}")
         print(f"Completion Tokens: {response.usage_metadata.candidates_token_count}")
-    print(f"AI Response: {response.text}")
+
+    if response.function_calls:
+        for function_call_part in response.function_calls:
+            result = call_function(function_call_part)
+            print(result)
+    else:
+        print(f"AI Response: {response.text}")
 
 
 main()
