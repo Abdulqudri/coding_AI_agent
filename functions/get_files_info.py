@@ -1,3 +1,4 @@
+"""to get file info"""
 import os
 
 

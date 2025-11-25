@@ -1,3 +1,4 @@
+"""the main intry point of the project"""
 import os
 import sys
 from dotenv import load_dotenv

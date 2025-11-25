@@ -1,7 +1,9 @@
+"""For getting file content"""
 import os
 from config import MAX_CHARS
 
 def get_file_content(working_directory, file_path):
+    """read the file content in a directory"""
     abs_working_directory = os.path.abspath(working_directory)
     abs_file_path = os.path.abspath(os.path.join(working_directory, file_path))
 

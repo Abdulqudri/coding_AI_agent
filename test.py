@@ -1,6 +1,11 @@
+"""test.py content"""
 from functions.get_files_info import get_files_info
 from functions.get_file_content import get_file_content
+from functions.write_file import write_file
+from functions.run_python_file import  run_python_file
+
 def main():
+    """function testing"""
 
     working_directory = "functions"
     root_contents = get_files_info(working_directory)
@@ -16,5 +21,8 @@ def main():
     print(function)
     function = get_file_content(working_directory, "index.py")
     print(function)
+
+    print(write_file(working_directory, "../tmp/index.txt", "hello world"))
+    print(run_python_file(".", "main.py"))
 
 main()
