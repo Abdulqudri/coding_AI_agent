@@ -1,4 +1,5 @@
 """the main intry point of the project"""
+
 import os
 import sys
 from dotenv import load_dotenv
@@ -11,6 +12,7 @@ from functions.write_file import schema_write_file
 from call_function import call_function
 
 load_dotenv()
+
 
 def main():
     """the main function of the program"""
@@ -49,12 +51,14 @@ def main():
     available_functions = types.Tool(
         function_declarations=[
             schema_get_files_info,
+            schema_get_file_content,
+            schema_write_file,
+            schema_run_python_file
         ]
     )
 
     config = types.GenerateContentConfig(
-        tools=[available_functions],
-        system_instruction=system_prompt
+        tools=[available_functions], system_instruction=system_prompt
     )
     client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -71,7 +75,9 @@ def main():
         if VERBOSE_FLAG:
             print(f"User prompt: {user_input}")
             print(f"Prompt Tokens: {response.usage_metadata.prompt_token_count}")
-            print(f"Completion Tokens: {response.usage_metadata.candidates_token_count}")
+            print(
+                f"Completion Tokens: {response.usage_metadata.candidates_token_count}"
+            )
 
         if response.candidates:
             for candidate in response.candidates:
@@ -83,7 +89,6 @@ def main():
             for function_call_part in response.function_calls:
                 result = call_function(function_call_part, VERBOSE_FLAG)
                 messages.append(result)
-                print(result)
         else:
             print(f"AI Response: {response.text}")
             return
