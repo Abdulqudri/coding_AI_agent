@@ -35,7 +35,11 @@ def main():
     -Write to a file(create or update)
     -Run a python file with optional arguments
 
-    All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
+    when the user asks about the code project - they are referring to the working directory.
+    So, you should typically start by looking at the project's files, and figuring out how to run the project
+    and how to run its tests, you'll always want to test the tests and the actual project to verify that the behavior is working.
+    All paths you provide should be relative to the working directory. 
+    You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
     """
 
     messages = [
@@ -52,28 +56,37 @@ def main():
         tools=[available_functions],
         system_instruction=system_prompt
     )
-
     client = genai.Client(api_key=GEMINI_API_KEY)
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=messages,
-        config=config,
-    )
-    if response is None or response.usage_metadata is None:
-        print("response is malformed")
-        return
-    if VERBOSE_FLAG:
-        print(f"User prompt: {user_input}")
-        print(f"Prompt Tokens: {response.usage_metadata.prompt_token_count}")
-        print(f"Completion Tokens: {response.usage_metadata.candidates_token_count}")
+    max_iters = 20
+    for i in range(0, max_iters):
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=messages,
+            config=config,
+        )
+        if response is None or response.usage_metadata is None:
+            print("response is malformed")
+            return
+        if VERBOSE_FLAG:
+            print(f"User prompt: {user_input}")
+            print(f"Prompt Tokens: {response.usage_metadata.prompt_token_count}")
+            print(f"Completion Tokens: {response.usage_metadata.candidates_token_count}")
 
-    if response.function_calls:
-        for function_call_part in response.function_calls:
-            result = call_function(function_call_part)
-            print(result)
-    else:
-        print(f"AI Response: {response.text}")
+        if response.candidates:
+            for candidate in response.candidates:
+                if candidate is None or candidate.content is None:
+                    continue
+                messages.append(candidate.content)
+
+        if response.function_calls:
+            for function_call_part in response.function_calls:
+                result = call_function(function_call_part, VERBOSE_FLAG)
+                messages.append(result)
+                print(result)
+        else:
+            print(f"AI Response: {response.text}")
+            return
 
 
 main()
